@@ -5,8 +5,8 @@ var last_link_viewed_index;
 var _info = true;
 var _debug = true;
 
-var sleep_between_views_min = 1000;
-var sleep_between_views_max = 1000;
+var sleep_between_views_min = 1000 * 30;
+var sleep_between_views_max = 1000 * 60;
 
 function scan( lastAmount, loadTries, links ){
 
@@ -56,7 +56,7 @@ function random(min, max){
 function scheduleNextView(){
 	var sleep = random(sleep_between_views_min, sleep_between_views_max);
 	
-	console.log("scheduled next view in: " + Math.round(sleep/1000) + " ms.");
+	console.log("scheduled next view in: " + Math.round(sleep/1000) + " s.");
 	setTimeout( function(){ viewNext(); }, sleep);
 }
 
@@ -70,7 +70,7 @@ function viewNext(){
             viewNext();
         }, function(){
             console.log("Has not viewed profile, view it");
-            viewURL( nextLink );
+            viewURL( nextLink, tabReady, scheduleNextView );
             addViewedProfile(nextLink);
             last_link_viewed_index++;
         });
@@ -81,13 +81,13 @@ function viewNext(){
 	}
 }
 
-function viewURL( link ){
+function viewURL( link, tabReady, tabFailed ){
 	chrome.tabs.create({ url: link });
-	waitForTab( link, 0 );
+	waitForTab( link, 0, tabReady, tabFailed );
 	//wait for that url to be current
 }
 
-function waitForTab( link, tries ){
+function waitForTab( link, tries, tabReady, tabFailed ){
 	chrome.tabs.query( {}, function( tabs ){
 		var tab = findPageInArray(tabs, link);
 		if( tab != null ){
@@ -98,11 +98,11 @@ function waitForTab( link, tries ){
 			if( tries < 5 ){
 				//try in another second
 				debug("wait for page, " + tries);
-				setTimeout( function(){ waitForTab(link, tries); }, 1000);
+				setTimeout( function(){ waitForTab(link, tries, tabReady, tabFailed); }, 1000);
 			} else{
 				//give up on this link, try the next one.
 				debug("never found page, try next one.");
-				scheduleNextView();
+				tabFailed();
 			}
 		}
 	});
@@ -124,16 +124,33 @@ function tabReady( link, tabid ){
        //View a random site in 5-15 seconds.
        //Stay on that page 30-45 seconds.
        //Close both pages
+        if( results[0] ){
+            //found possible experiences
+            var t1 = random(10, 15);
+            console.log("Open experience page in " + t1 + " s.");
+            setTimeout( function(){
+                //Open new page
+                var experienceLink = results[0][random(0,results[0].length-1)];
+                debug("View experience link: " + experienceLink);
+                chrome.tabs.create({ url: experienceLink });
+                var t2 = random(30, 45);
+                console.log("Finished viewing in " + t2 + " s.");
+                waitForTab( experienceLink, 0, function( _link, _tabid){
+                    setTimeout( function(){
+                        chrome.tabs.remove(_tabid);
+                        chrome.tabs.remove(tabid, function(){
+                            debug("Continue onto next url");
+                            scheduleNextView();
+                        })
+                    }, t2 * 1000);
+                } );
+            }, t1 * 1000);
+        } else {
+            console.log("no results returned from script, move on to next profile.");
+            scheduleNextView();
+        }
 
     });
-	chrome.tabs.executeScript(tabid, {code: "window.scrollTo(0,document.body.scrollHeight);"}, function(results){
-		setTimeout( function(){
-			chrome.tabs.remove(tabid, function(){
-				debug("continue onto next url");
-				scheduleNextView();
-			});
-		}, 1000 );
-	});
 }
 
 function viewProfileAdvanced(){
@@ -220,7 +237,8 @@ chrome.extension.onMessage.addListener(
                 break;
             case "test":
                 console.log('test');
-                viewURL("https://www.linkedin.com/profile/view?id=101699&authType=name&authToken=kZUn&trk=connect_hub_pymk_profile_name");
+                viewURL("https://www.linkedin.com/profile/view?id=101699&authType=name&authToken=kZUn&trk=connect_hub_pymk_profile_name",
+                tabReady, function(){});
                 sendResponse({});
                 break;
             default:
