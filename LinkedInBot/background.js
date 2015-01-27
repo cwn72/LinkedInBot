@@ -120,6 +120,12 @@ function findPageInArray( tabs, link ){
 
 function tabReady( link, tabid ){
 	//scroll to the bottom of the page, and then close.
+    chrome.tabs.executeScript(tabid, {file: 'profileViewer.js'}, function(results){
+       //View a random site in 5-15 seconds.
+       //Stay on that page 30-45 seconds.
+       //Close both pages
+
+    });
 	chrome.tabs.executeScript(tabid, {code: "window.scrollTo(0,document.body.scrollHeight);"}, function(results){
 		setTimeout( function(){
 			chrome.tabs.remove(tabid, function(){
@@ -128,6 +134,10 @@ function tabReady( link, tabid ){
 			});
 		}, 1000 );
 	});
+}
+
+function viewProfileAdvanced(){
+
 }
 
 
@@ -206,6 +216,11 @@ chrome.extension.onMessage.addListener(
             case "clear-data":
                 console.log('clear data');
                 clearViewedProfiles();
+                sendResponse({});
+                break;
+            case "test":
+                console.log('test');
+                viewURL("https://www.linkedin.com/profile/view?id=101699&authType=name&authToken=kZUn&trk=connect_hub_pymk_profile_name");
                 sendResponse({});
                 break;
             default:

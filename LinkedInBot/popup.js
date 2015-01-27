@@ -10,7 +10,14 @@ function clearDataHandler(e){
     });
 }
 
+function testHandler(e){
+    chrome.extension.sendMessage({directive: "test"}, function(response) {
+        this.close(); // close the popup when the background finishes processing request
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('start-scan').addEventListener('click', scanHandler);
     document.getElementById('clear-data').addEventListener('click', clearDataHandler);
+    document.getElementById('test').addEventListener('click', testHandler);
 })
