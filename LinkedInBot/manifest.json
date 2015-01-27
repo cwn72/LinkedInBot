@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+
+  "name": "Linked In Bot",
+  "description": "Automatically view people you may know.",
+  "version": "2.1",
+
+  "permissions": [
+	"tabs",
+	"activeTab",
+	"storage",
+	"background",
+    "http://*/",
+	"https://*/"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  }, 
+  "page_action": {
+	"default_icon": "icon.png",
+	"default_popup": "popup.html",
+	"default_title": "LinkedIn Bot"     
+  }
+}
