@@ -5,8 +5,15 @@ var last_link_viewed_index;
 var _info = true;
 var _debug = true;
 
-var sleep_between_views_min = 1000 * 1;
-var sleep_between_views_max = 1000 * 1;
+//Between profile views
+var sleep_1_1 = 1000 * 20;
+var sleep_1_2 = 1000 * 30;
+//Before opening experience
+var sleep_2_1 = 1000 * 5;
+var sleep_2_2 = 1000 * 15;
+//Before closing profile
+var sleep_3_1 = 1000 * 30;
+var sleep_3_2 = 1000 * 40;
 
 function scan( lastAmount, loadTries, links ){
 
@@ -54,7 +61,7 @@ function random(min, max){
 }
 
 function scheduleNextView(){
-	var sleep = random(sleep_between_views_min, sleep_between_views_max);
+	var sleep = random(sleep_1_1, sleep_1_2);
 	
 	console.log("scheduled next view in: " + Math.round(sleep/1000) + " s.");
 	setTimeout( function(){ viewNext(); }, sleep);
@@ -126,15 +133,15 @@ function tabReady( link, tabid ){
        //Close both pages
         if( results[0] ){
             //found possible experiences
-            var t1 = random(1, 1);
-            console.log("Open experience page in " + t1 + " s.");
+            var t1 = random(sleep_2_1, sleep_2_2);
+            console.log("Open experience page in " + (t1/1000) + " s.");
             setTimeout( function(){
                 //Open new page
                 var experienceLink = results[0][random(0,results[0].length-1)];
                 debug("View experience link: " + experienceLink);
                 chrome.tabs.create({ url: experienceLink });
-                var t2 = random(1, 1);
-                console.log("Finished viewing in " + t2 + " s.");
+                var t2 = random(sleep_3_1, sleep_3_2);
+                console.log("Finished viewing in " + (t2/1000) + " s.");
                 waitForTab( experienceLink, 0, function( _link, _tabid){
                     setTimeout( function(){
                         chrome.tabs.remove(_tabid);
@@ -143,9 +150,9 @@ function tabReady( link, tabid ){
                             closeExtraTabs();
                             scheduleNextView();
                         })
-                    }, t2 * 1000);
+                    }, t2 );
                 } );
-            }, t1 * 1000);
+            }, t1 );
         } else {
             console.log("no results returned from script, move on to next profile.");
             closeExtraTabs();
