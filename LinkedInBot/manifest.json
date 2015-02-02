@@ -10,6 +10,7 @@
 	"activeTab",
 	"storage",
 	"background",
+	"unlimitedStorage",
     "http://*/",
 	"https://*/"
   ],

@@ -5,8 +5,8 @@ var last_link_viewed_index;
 var _info = true;
 var _debug = true;
 
-var sleep_between_views_min = 1000 * 30;
-var sleep_between_views_max = 1000 * 60;
+var sleep_between_views_min = 1000 * 1;
+var sleep_between_views_max = 1000 * 1;
 
 function scan( lastAmount, loadTries, links ){
 
@@ -126,20 +126,21 @@ function tabReady( link, tabid ){
        //Close both pages
         if( results[0] ){
             //found possible experiences
-            var t1 = random(10, 15);
+            var t1 = random(1, 1);
             console.log("Open experience page in " + t1 + " s.");
             setTimeout( function(){
                 //Open new page
                 var experienceLink = results[0][random(0,results[0].length-1)];
                 debug("View experience link: " + experienceLink);
                 chrome.tabs.create({ url: experienceLink });
-                var t2 = random(30, 45);
+                var t2 = random(1, 1);
                 console.log("Finished viewing in " + t2 + " s.");
                 waitForTab( experienceLink, 0, function( _link, _tabid){
                     setTimeout( function(){
                         chrome.tabs.remove(_tabid);
                         chrome.tabs.remove(tabid, function(){
                             debug("Continue onto next url");
+                            closeExtraTabs();
                             scheduleNextView();
                         })
                     }, t2 * 1000);
@@ -147,9 +148,20 @@ function tabReady( link, tabid ){
             }, t1 * 1000);
         } else {
             console.log("no results returned from script, move on to next profile.");
+            closeExtraTabs();
             scheduleNextView();
         }
 
+    });
+}
+
+function closeExtraTabs(){
+    chrome.tabs.query( {}, function( tabs ){
+       for( var i = 0; i < tabs.length; i++ ){
+           if( tabs[i].url.indexOf('linkedin') != -1 && tabs[i].url.indexOf('/people/pymk') == -1 ){
+               chrome.tabs.remove(tabs[i].id);
+           }
+       }
     });
 }
 
@@ -171,19 +183,19 @@ function debug( obj ){
 
 //Memory of viewed profiles
 function addViewedProfile( id ){
-    chrome.storage.sync.get('viewedProfiles', function( items ) {
+    chrome.storage.local.get('viewedProfiles', function( items ) {
         if (items['viewedProfiles']) {
             var currString = items['viewedProfiles'];
             var newString = currString+","+id;
-            chrome.storage.sync.set({'viewedProfiles': newString})
+            chrome.storage.local.set({'viewedProfiles': newString})
         } else {
-            chrome.storage.sync.set({'viewedProfiles': id});
+            chrome.storage.local.set({'viewedProfiles': id});
         }
     });
 }
 
 function hasViewedProfile( id, onViewed, onNotViewed ){
-    chrome.storage.sync.get('viewedProfiles', function(items){
+    chrome.storage.local.get('viewedProfiles', function(items){
        if( items['viewedProfiles'] ){
            var split = items['viewedProfiles'].split(',');
            for( var i = 0; i < split.length; i++ ){
@@ -201,13 +213,13 @@ function hasViewedProfile( id, onViewed, onNotViewed ){
 }
 
 function printViewedProfilesString(){
-    chrome.storage.sync.get('viewedProfiles', function(items){
+    chrome.storage.local.get('viewedProfiles', function(items){
        console.log(items['viewedProfiles']);
     });
 }
 
 function clearViewedProfiles(){
-    chrome.storage.sync.set({'viewedProfiles': ''});
+    chrome.storage.local.set({'viewedProfiles': ''});
 }
 
 /*
@@ -237,8 +249,7 @@ chrome.extension.onMessage.addListener(
                 break;
             case "test":
                 console.log('test');
-                viewURL("https://www.linkedin.com/profile/view?id=101699&authType=name&authToken=kZUn&trk=connect_hub_pymk_profile_name",
-                tabReady, function(){});
+
                 sendResponse({});
                 break;
             default:
